@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -14,7 +16,7 @@ impl Post {
     }
 
     pub fn actual_id(&self) -> i32 {
-        self.id.unwrap_or(self.parent_id.unwrap_or(0))
+        self.id.unwrap_or_else(|| self.parent_id.unwrap_or(0))
     }
 
     pub fn post_url(&self) -> String {
@@ -75,7 +77,7 @@ mod tests {
     }
 }
 
-pub async fn get_posts_after_id(after_id: i32) -> Result<Vec<Post>, reqwest::Error> {
+pub async fn get_posts_after_id(after_id: i32) -> Result<Vec<Post>, Box<dyn Error>> {
     let client = reqwest::Client::new();
     let posts: Vec<Post> = client
         .get("https://danbooru.donmai.us/posts.json")
