@@ -16,10 +16,29 @@ jobs:
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v2
+
+      - name: Setup Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v1
+
+      # Building it in the Actions environment speeds it up
+      # because we have the dependency cache. The `target` directory
+      # is copied over to the build container.
+      - name: Build (Release)
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+
       - name: Build image
         run: docker build . --file Dockerfile --tag image
+
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
       - name: Push image
         run: |
           IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
