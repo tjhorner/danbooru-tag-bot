@@ -49,10 +49,6 @@ async fn answer(
   command: Command,
   db: Arc<Mutex<PgConnection>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-  if message.chat.id != ChatId(78442301) {
-      return Ok(());
-  }
-
   match command {
     Command::Help => {
       bot.send_message(message.chat.id, Command::descriptions().to_string()).await?;
