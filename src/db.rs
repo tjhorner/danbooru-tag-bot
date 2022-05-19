@@ -41,6 +41,7 @@ impl Database for Db {
       .select(count(subscriptions::user_id))
       .filter(subscriptions::tag.eq(tag))
       .filter(subscriptions::user_id.eq(user_id))
+      .limit(1)
       .first(&self.conn);
     
     match result {
