@@ -19,7 +19,7 @@ pub async fn run(db_connection: PgConnection) {
       .chain(dptree::endpoint(answer));
 
   Dispatcher::builder(
-     bot, handler,
+    bot, handler,
   )
   .default_handler(ignore_update)
   .dependencies(dptree::deps![

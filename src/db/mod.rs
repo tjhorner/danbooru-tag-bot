@@ -1,9 +1,13 @@
+mod models;
+
 use std::env;
 use diesel::dsl::{sql, count};
 use diesel::prelude::*;
-use diesel::{PgConnection, Connection, Queryable};
-use super::schema::subscriptions;
-use super::schema::post_index;
+use diesel::{PgConnection, Connection};
+use self::models::*;
+
+use crate::schema::subscriptions;
+use crate::schema::post_index;
 
 pub fn establish_db_connection() -> PgConnection {
   let database_url = env::var("DATABASE_URL")
@@ -94,30 +98,4 @@ impl Database for Db {
       .execute(&self.conn)
       .expect("Error updating post index");
   }
-}
-
-#[derive(Queryable)]
-pub struct Subscription {
-  pub id: i32,
-  pub tag: String,
-  pub user_id: i64,
-}
-
-#[derive(Insertable)]
-#[table_name="subscriptions"]
-pub struct NewSubscription<'a> {
-  pub tag: &'a str,
-  pub user_id: &'a i64,
-}
-
-#[derive(Queryable)]
-pub struct SubscriptionResult {
-  pub user_id: i64,
-  pub tags: String,
-}
-
-#[derive(Queryable)]
-pub struct PostIndex {
-  pub id: i32,
-  pub last_seen_post: i32,
 }
