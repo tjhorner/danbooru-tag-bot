@@ -65,8 +65,7 @@ async fn answer(
 
       let user_id = message.from().unwrap().id.0 as i64;
 
-      let subscription = conn.get_subscription(&tag, &user_id);
-      if let Some(_) = subscription {
+      if conn.has_subscription(&tag, &user_id) {
         bot.send_message(message.chat.id, format!("You are already subscribed to {tag}")).await?;
       } else {
         conn.create_subscription(&tag, &user_id);
@@ -79,8 +78,7 @@ async fn answer(
       let tag = tag.to_lowercase();
       let user_id = message.from().unwrap().id.0 as i64;
 
-      let subscription = conn.get_subscription(&tag, &user_id);
-      if let Some(_) = subscription {
+      if conn.has_subscription(&tag, &user_id) {
         conn.remove_subscription(&tag, &user_id);
         log::info!("User {} unsubscribed from {}", user_id, tag);
         bot.send_message(message.chat.id, format!("Unsubscribed from {tag}")).await?;

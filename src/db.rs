@@ -1,5 +1,5 @@
 use std::env;
-use diesel::dsl::sql;
+use diesel::dsl::{sql, count};
 use diesel::prelude::*;
 use diesel::{PgConnection, Connection, Queryable};
 use super::schema::subscriptions;
@@ -16,6 +16,7 @@ pub trait Database {
   fn create_subscription(&self, tag: &str, user_id: &i64) -> Subscription;
   fn remove_subscription(&self, tag: &str, user_id: &i64) -> bool;
   fn get_subscription(&self, tag: &str, user_id: &i64) -> Option<Subscription>;
+  fn has_subscription(&self, tag: &str, user_id: &i64) -> bool;
   fn get_users_subscribed_to_tags(&self, tags: &[String]) -> Vec<SubscriptionResult>;
 
   fn get_post_index(&self) -> i32;
@@ -33,6 +34,19 @@ impl Database for Db {
       .filter(subscriptions::user_id.eq(user_id))
       .first::<Subscription>(&self.conn)
       .ok()
+  }
+
+  fn has_subscription(&self, tag: &str, user_id: &i64) -> bool {
+    let result = subscriptions::table
+      .select(count(subscriptions::user_id))
+      .filter(subscriptions::tag.eq(tag))
+      .filter(subscriptions::user_id.eq(user_id))
+      .first(&self.conn);
+    
+    match result {
+      Ok(1) => true,
+      _ => false,
+    }
   }
 
   fn get_users_subscribed_to_tags(&self, tags: &[String]) -> Vec<SubscriptionResult> {
