@@ -1,5 +1,5 @@
 use diesel::PgConnection;
-use teloxide::{prelude::*, utils::command::BotCommands, types::ChatId, dispatching::{Dispatcher, update_listeners}};
+use teloxide::{prelude::*, utils::command::BotCommands, dispatching::{Dispatcher, update_listeners}};
 use std::{error::Error, sync::{Arc}};
 use tokio::sync::Mutex;
 use crate::db;
