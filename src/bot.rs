@@ -5,8 +5,7 @@ use tokio::sync::Mutex;
 use crate::db;
 
 pub async fn run(db_connection: PgConnection) {
-  pretty_env_logger::init();
-  log::info!("Starting command bot...");
+  log::info!("Starting bot...");
 
   let bot = Bot::from_env().auto_send();
 
@@ -69,6 +68,7 @@ async fn answer(
         bot.send_message(message.chat.id, format!("You are already subscribed to {tag}")).await?;
       } else {
         db::create_subscription(&conn, &tag, &user_id);
+        log::info!("User {} subscribed to {}", user_id, tag);
         bot.send_message(message.chat.id, format!("Subscribed to {tag}")).await?;
       }
     },
@@ -80,6 +80,7 @@ async fn answer(
       let subscription = db::get_subscription(&conn, &tag, &user_id);
       if let Some(_) = subscription {
         db::remove_subscription(&conn, &tag, &user_id);
+        log::info!("User {} unsubscribed from {}", user_id, tag);
         bot.send_message(message.chat.id, format!("Unsubscribed from {tag}")).await?;
       } else {
         bot.send_message(message.chat.id, format!("You're not subscribed to {tag}")).await?;

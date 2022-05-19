@@ -17,15 +17,18 @@ pub async fn run(conn: PgConnection) {
   match posts {
     Ok(posts) => {
       if let Some(first_post) = posts.first() {
-        db::set_post_index(&conn, first_post.actual_id());
-        println!("Updated post index to {}", first_post.actual_id());
+        let id = first_post.actual_id();
+        if id > post_index {
+          db::set_post_index(&conn, id);
+          log::info!("Updated post index to {}", id);
+        }
       }
 
       let futures = posts.iter().map(|p| notify_users_for_post(&conn, p, &bot));
       join_all(futures).await;
     },
     Err(e) => {
-      println!("Error getting posts: {}", e);
+      log::error!("Error getting posts: {}", e);
     }
   }
 }
@@ -33,7 +36,7 @@ pub async fn run(conn: PgConnection) {
 async fn notify_users_for_post(conn: &PgConnection, post: &api::Post, bot: &AutoSend<Bot>) {
   let subscriptions = db::get_users_subscribed_to_tags(&conn, &post.tags());
   for sub in subscriptions {
-    println!("Notifying user {} for post {:?}", sub.user_id, post.id);
+    log::info!("Notifying user {} for post {}", sub.user_id, post.actual_id());
 
     let msg_result = bot.send_message(
       ChatId(sub.user_id),
@@ -41,7 +44,7 @@ async fn notify_users_for_post(conn: &PgConnection, post: &api::Post, bot: &Auto
     ).await;
 
     if let Err(e) = msg_result {
-      println!("Error sending message to user {}: {}", sub.user_id, e);
+      log::error!("Error sending message to user {}: {}", sub.user_id, e);
     }
   }
 }

@@ -17,11 +17,13 @@ use std::env;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    pretty_env_logger::init();
+    
     let args: Vec<String> = env::args().collect();
 
     let db_conn = db::establish_db_connection();
     if let Err(e) = embedded_migrations::run(&db_conn) {
-        println!("Error running migrations: {}", e);
+        log::error!("Error running migrations: {}", e);
     }
 
     match args[1].as_str() {
