@@ -1,4 +1,4 @@
-name: Build and Test
+name: Cargo Test
 
 on:
   push:
@@ -17,12 +17,6 @@ jobs:
           toolchain: stable
 
       - uses: Swatinem/rust-cache@v1
-
-      - name: Build (Release)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
 
       - name: Run Tests
         uses: actions-rs/cargo@v1
