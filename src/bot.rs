@@ -2,7 +2,7 @@ use diesel::PgConnection;
 use teloxide::{prelude::*, utils::command::BotCommands, dispatching::{Dispatcher, update_listeners}};
 use std::{error::Error, sync::{Arc}};
 use tokio::sync::Mutex;
-use crate::db;
+use crate::db::{Db, Database};
 
 pub async fn run(db_connection: PgConnection) {
   log::info!("Starting bot...");
@@ -22,7 +22,9 @@ pub async fn run(db_connection: PgConnection) {
      bot, handler,
   )
   .default_handler(ignore_update)
-  .dependencies(dptree::deps![Arc::new(Mutex::new(db_connection))])
+  .dependencies(dptree::deps![
+    Arc::new(Mutex::new(Db { conn: db_connection }))
+  ])
   .build()
   .setup_ctrlc_handler()
   .dispatch_with_listener(
@@ -46,7 +48,7 @@ async fn answer(
   bot: AutoSend<Bot>,
   message: Message,
   command: Command,
-  db: Arc<Mutex<PgConnection>>,
+  db: Arc<Mutex<dyn Database + Send + Sync>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
   match command {
     Command::Help => {
@@ -63,11 +65,11 @@ async fn answer(
 
       let user_id = message.from().unwrap().id.0 as i64;
 
-      let subscription = db::get_subscription(&conn, &tag, &user_id);
+      let subscription = conn.get_subscription(&tag, &user_id);
       if let Some(_) = subscription {
         bot.send_message(message.chat.id, format!("You are already subscribed to {tag}")).await?;
       } else {
-        db::create_subscription(&conn, &tag, &user_id);
+        conn.create_subscription(&tag, &user_id);
         log::info!("User {} subscribed to {}", user_id, tag);
         bot.send_message(message.chat.id, format!("Subscribed to {tag}")).await?;
       }
@@ -77,9 +79,9 @@ async fn answer(
       let tag = tag.to_lowercase();
       let user_id = message.from().unwrap().id.0 as i64;
 
-      let subscription = db::get_subscription(&conn, &tag, &user_id);
+      let subscription = conn.get_subscription(&tag, &user_id);
       if let Some(_) = subscription {
-        db::remove_subscription(&conn, &tag, &user_id);
+        conn.remove_subscription(&tag, &user_id);
         log::info!("User {} unsubscribed from {}", user_id, tag);
         bot.send_message(message.chat.id, format!("Unsubscribed from {tag}")).await?;
       } else {

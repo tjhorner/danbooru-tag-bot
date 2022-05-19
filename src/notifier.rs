@@ -8,9 +8,12 @@ use futures::future::join_all;
 
 use crate::api;
 use crate::db;
+use crate::db::Database;
 
 pub async fn run(conn: PgConnection) {
-  let post_index = db::get_post_index(&conn);
+  let db = db::Db { conn };
+
+  let post_index = db.get_post_index();
   let bot = Bot::from_env().auto_send();
 
   let posts = api::get_posts_after_id(post_index).await;
@@ -19,12 +22,12 @@ pub async fn run(conn: PgConnection) {
       if let Some(first_post) = posts.first() {
         let id = first_post.actual_id();
         if id > post_index {
-          db::set_post_index(&conn, id);
+          db.set_post_index(id);
           log::info!("Updated post index to {}", id);
         }
       }
 
-      let futures = posts.iter().map(|p| notify_users_for_post(&conn, p, &bot));
+      let futures = posts.iter().map(|p| notify_users_for_post(&db, p, &bot));
       join_all(futures).await;
     },
     Err(e) => {
@@ -33,8 +36,8 @@ pub async fn run(conn: PgConnection) {
   }
 }
 
-async fn notify_users_for_post(conn: &PgConnection, post: &api::Post, bot: &AutoSend<Bot>) {
-  let subscriptions = db::get_users_subscribed_to_tags(&conn, &post.tags());
+async fn notify_users_for_post(db: &dyn Database, post: &api::Post, bot: &AutoSend<Bot>) {
+  let subscriptions = db.get_users_subscribed_to_tags(&post.tags());
   for sub in subscriptions {
     log::info!("Notifying user {} for post {}", sub.user_id, post.actual_id());
 
